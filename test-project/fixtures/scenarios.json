@@ -1,0 +1,58 @@
+{
+  "notice": "Synthetic snapshots only. Amounts are test values, not Rufescent pricing outputs.",
+  "availability_request": {
+    "check_in_date": "2026-12-01T10:00:00Z",
+    "check_out_date": "2026-12-03T08:00:00Z",
+    "room_type_id": "11111111-1111-4111-8111-111111111111"
+  },
+  "member_multi_room": {
+    "operation": "create",
+    "booking": {
+      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "readable_id": "DEMO-STAY-001",
+      "check_in_date": "2026-12-01T10:00:00Z",
+      "check_out_date": "2026-12-03T08:00:00Z",
+      "status": "confirmed",
+      "guest_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "guest_name": "Demo Booking Member",
+      "primary_guest_is_member": true,
+      "rate_audience": "member",
+      "number_of_adults": 2,
+      "number_of_children": 1,
+      "subtotal_amount": "2200.00",
+      "discount_amount": "100.00",
+      "charges_amount": "220.00",
+      "tax_amount": "121.00",
+      "total_amount": "2541.00",
+      "currency": "AED",
+      "booking_rooms": [
+        {
+          "id": "cccccccc-cccc-4ccc-8ccc-ccccccccccc1",
+          "room_id": "dddddddd-dddd-4ddd-8ddd-ddddddddddd1",
+          "room_type_id": "11111111-1111-4111-8111-111111111111",
+          "package_id": null,
+          "number_of_adults": 1,
+          "number_of_children": 1,
+          "subtotal_amount": "1000.00",
+          "discount_amount": "0.00",
+          "charges_amount": "100.00",
+          "tax_amount": "55.00",
+          "total_amount": "1155.00"
+        },
+        {
+          "id": "cccccccc-cccc-4ccc-8ccc-ccccccccccc2",
+          "room_id": "dddddddd-dddd-4ddd-8ddd-ddddddddddd2",
+          "room_type_id": "11111111-1111-4111-8111-111111111111",
+          "package_id": "33333333-3333-4333-8333-333333333333",
+          "number_of_adults": 1,
+          "number_of_children": 0,
+          "subtotal_amount": "1200.00",
+          "discount_amount": "100.00",
+          "charges_amount": "120.00",
+          "tax_amount": "66.00",
+          "total_amount": "1386.00"
+        }
+      ]
+    }
+  }
+}

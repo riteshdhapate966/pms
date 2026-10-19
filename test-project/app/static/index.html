@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stay sync lab · Rufescent</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="brand"><span class="brand-mark">r.</span><span>RUFESCENT<span class="brand-sub">INTEGRATIONS LAB</span></span></a>
+    <nav><span class="mode"><i></i> LOCAL SIMULATOR</span><a href="/docs" target="_blank" rel="noopener">API docs ↗</a></nav>
+  </header>
+  <main>
+    <div class="eyebrow">STAY / PMS INTEGRATION</div>
+    <section class="hero">
+      <div><h1>Every stay.<br>Always in sync.</h1><p>Connect a property. Create a stay. Follow every booking change<br class="desktop"> and refund from Rufescent to the PMS.</p></div>
+      <div class="intro-note"><span class="small-dot"></span><div><strong>A space to test the whole journey.</strong><p>Bookings, PMS updates and refunds are simulated locally. No real hotel records change and no money moves.</p></div></div>
+    </section>
+    <div id="live-warning" class="notice hidden">Lifecycle actions require mock mode. Set PMS_MODE=mock and restart. Live API reads remain available in API docs.</div>
+    <section class="metrics" aria-label="Integration overview">
+      <div><span>Linked properties</span><strong id="metric-properties">—</strong></div>
+      <div><span>Test bookings</span><strong id="metric-bookings">—</strong></div>
+      <div><span>PMS synced</span><strong id="metric-synced">—</strong></div>
+      <div><span>Needs attention</span><strong id="metric-attention">—</strong></div>
+    </section>
+    <div class="workspace">
+      <aside class="setup">
+        <section class="panel">
+          <div class="section-heading"><span class="step">01</span><h2>Link your property</h2></div>
+          <p class="hint">Choose which PMS property receives this stay's bookings.</p>
+          <form id="property-form">
+            <label>Stay identifier<input name="stay_id" value="demo-stay" required pattern="[a-zA-Z0-9_-]+" maxlength="80"></label>
+            <label>Stay name<input name="stay_name" value="Rufescent Demo Stay" required maxlength="100"></label>
+            <div class="form-row"><label>PMS property code<input name="pms_property_code" value="DEMO" required maxlength="40"></label><label>Source ID<input name="source_id" value="WISH" required maxlength="40"></label></div>
+            <button type="submit" class="secondary full">Link property <span>↗</span></button>
+          </form>
+          <div id="linked-properties" class="linked-list"></div>
+        </section>
+        <section class="panel">
+          <div class="section-heading"><span class="step">02</span><h2>Create a test stay</h2></div>
+          <form id="booking-form">
+            <label>Linked property<select name="stay_id" id="stay-select" required><option value="">Link a property first</option></select></label>
+            <label>Guest scenario<select name="scenario" id="scenario-select"><option value="member_multi_room">Member stay</option><option value="friends_and_family">Friends &amp; family stay</option></select></label>
+            <label>Staying guest<input name="guest_name" value="Demo Booking Member" required maxlength="200"></label>
+            <div class="form-row"><label>Check-in · Dubai<input name="arrival" type="date" value="2026-12-01" required></label><label>Check-out · Dubai<input name="departure" type="date" value="2026-12-03" required></label></div>
+            <div class="stay-summary"><span>2 rooms · 2 adults · 1 child</span><small>Room only + half board · synthetic snapshot</small><strong>AED 2,541.00</strong></div>
+            <div class="form-row"><label>Initial status<select name="status"><option value="pending">Pending</option><option value="confirmed">Confirmed</option></select></label><label>Simulated amount paid<input name="paid_amount" type="number" min="0" max="2541" step="0.01" value="2541.00" required></label></div>
+            <label>PMS failure test<select name="sync_failure"><option value="none">None — sync normally</option><option value="before_apply">Fail before PMS receives it</option><option value="after_apply">Timeout after PMS applies it</option></select></label>
+            <button type="submit" class="primary full" id="create-button">Create booking &amp; sync <span>→</span></button>
+          </form>
+        </section>
+      </aside>
+      <div class="content">
+        <section class="panel bookings-panel">
+          <div class="panel-title"><div><div class="eyebrow">YOUR TEST WORKSPACE</div><h2>Stay bookings</h2></div><button id="refresh" class="quiet" type="button">↻ Refresh</button></div>
+          <div id="booking-list" class="booking-list"><div class="empty">Loading the test workspace…</div></div>
+        </section>
+        <section id="booking-detail" class="panel detail-panel"><div class="empty"><div class="empty-symbol">↔</div><h2>Your booking journey starts here</h2><p>Link a property and create a booking.<br>Then test each status change, PMS retry and refund.</p></div></section>
+      </div>
+    </div>
+    <footer>Rufescent stays · WISH PMS test workspace<span>Local data persists between restarts. <a href="/docs">Explore the API ↗</a></span></footer>
+  </main>
+  <div id="toast" role="status" aria-live="polite" class="toast hidden"></div>
+  <template id="detail-template">
+    <div class="panel-title"><div><div class="eyebrow" data-field="readable_id"></div><h2 data-field="guest_name"></h2></div><span class="badge" data-field="sync_badge"></span></div>
+    <div class="booking-meta" data-field="meta"></div>
+    <div class="compare">
+      <div><span class="eyebrow">RUFESCENT STAY</span><strong data-field="local_status"></strong><small data-field="local_id"></small></div>
+      <div class="sync-arrow">↔</div>
+      <div><span class="eyebrow">SIMULATED PMS</span><strong data-field="pms_status"></strong><small data-field="pms_id"></small></div>
+    </div>
+    <div class="notice hidden" data-field="sync_error"></div>
+    <div class="actions"><div><label>Failure for the next PMS update<select id="action-failure"><option value="none">None — sync normally</option><option value="before_apply">Fail before PMS receives it</option><option value="after_apply">Timeout after PMS applies it</option></select></label></div><div data-field="status_actions" class="status-buttons"></div></div>
+    <div class="money-grid"><div><span>Booking total</span><strong data-field="total"></strong></div><div><span>Simulated payment</span><strong data-field="paid"></strong></div><div><span>Refund completed</span><strong data-field="refunded"></strong></div><div><span>Refund on PMS</span><strong data-field="pms_refunded"></strong></div></div>
+    <div data-field="refund_area"></div>
+    <div class="timeline-heading"><h3>Sync activity</h3><span>Oldest first · each event is saved</span></div>
+    <div data-field="timeline" class="timeline"></div>
+  </template>
+</body>
+</html>

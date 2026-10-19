@@ -1,0 +1,16 @@
+{
+  "synthetic": true,
+  "room_types": [
+    {
+      "rufescent_room_type_id": "11111111-1111-4111-8111-111111111111",
+      "name": "Demo Deluxe",
+      "wish_room_type_code": "DLX",
+      "rates": {
+        "member:none": "DEMO_MEMBER_RO",
+        "friends_and_family:none": "DEMO_FAMILY_RO",
+        "member:33333333-3333-4333-8333-333333333333": "DEMO_MEMBER_HB",
+        "friends_and_family:33333333-3333-4333-8333-333333333333": "DEMO_FAMILY_HB"
+      }
+    }
+  ]
+}

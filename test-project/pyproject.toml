@@ -1,0 +1,16 @@
+[project]
+name = "wish-pms-api-test"
+version = "0.1.0"
+description = "FastAPI test harness for WISH PMS JSON APIs"
+requires-python = ">=3.12"
+dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1", "pydantic-settings>=2.5,<3"]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.9,<1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100

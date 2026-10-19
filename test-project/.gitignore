@@ -1,0 +1,11 @@
+.venv/
+.env
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.uv-cache/
+*.pyc
+fixtures/live-mappings.json
+data/
+artifacts/
+.browser-profile/
