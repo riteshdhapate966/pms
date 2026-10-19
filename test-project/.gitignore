@@ -6,6 +6,7 @@ __pycache__/
 .uv-cache/
 *.pyc
 fixtures/live-mappings.json
+fixtures/live-contracts.json
 data/
 artifacts/
 .browser-profile/

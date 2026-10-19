@@ -10,7 +10,7 @@ from fastapi import APIRouter, Body, HTTPException, Request
 from fastapi import Path as PathParameter
 
 from app.htng import OTA, node
-from app.stay_schemas import DUBAI, ReservationTrial, StayQuery
+from app.stay_schemas import DUBAI, BookingSearch, ReservationTrial, StayQuery
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 router = APIRouter(prefix="/api/rufescent", tags=["Rufescent stay trials"])
@@ -212,8 +212,10 @@ class StayHarness:
 
 
 @router.get("/scenarios")
-def scenarios():
+def scenarios(request: Request = None):
     """Synthetic Rufescent booking snapshots, not exports of real guest records."""
+    if request is not None and request.app.state.config.mode == "live":
+        raise HTTPException(409, "Synthetic scenarios are unavailable in live mode")
     data = json.loads((FIXTURES / "scenarios.json").read_text(encoding="utf-8"))
     family = deepcopy(data["member_multi_room"])
     family["booking"].update(
@@ -231,6 +233,12 @@ def scenarios():
 def mappings(request: Request):
     harness = request.app.state.stay
     return {"mappings": harness.mappings, "notice": harness.mapping_notice}
+
+
+@router.post("/pms-bookings/search")
+async def search_pms_bookings(query: BookingSearch, request: Request):
+    """Real WISH reserved/in-house/checked-out search; no local booking records are substituted."""
+    return await request.app.state.pms.search_bookings(query)
 
 
 @router.get("/pms-bookings/{pms_booking_id}")

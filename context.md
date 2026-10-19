@@ -2,6 +2,28 @@
 
 Updated: 2026-10-19. This is a detailed handoff of the conversation and implementation, not a verbatim transcript. No credentials or real guest records are included.
 
+## Latest update: user-supplied deployment details
+
+**Subsequent request: “make all live.”** Added `app/live.py`, a real JSON/SOAP write gateway driven by explicit vendor-verified operation contracts (`PMS_LIVE_CONTRACTS_FILE`), not guessed endpoint names. Live and mock lifecycle state now use separate SQLite ledger rows. Real booking/status/external-refund-record requests are possible only with ready credentials, mappings and operation contracts; no bundled write contract is enabled. Missing credentials no longer prevent the live UI from starting. Live mode does not load synthetic scenarios or mock-ledger records. Added real WISH reserved/in-house/checked-out search. Write intent is durable before HTTP delivery; uncertain outcomes become `reconciliation_required` and cannot be blindly retried, including after restart. Refunds record an already-completed external processor reference; no live money-refund provider is implemented. See `test-project/docs/live-mode.md` for exact setup and remaining constraints. No real write has been performed or verified against WISH. Read-only root/help discovery requests failed to connect from this environment. `.env.example` was restored with blank credentials and documented optional settings.
+
+Current local readiness was checked without exposing secrets: mode is `live`, JSON credentials are missing, SOAP credentials are missing, and no live operation-contract file is configured. `/api/workspace/config` returns 200 and reports zero ready write operations. Enabling all real operations is still externally blocked; do not tell the user all tabs are operational against WISH.
+
+After the live gateway work, the full automated suite passed 68 tests with injected transports, not real WISH calls. JavaScript syntax checks passed. The existing Starlette TestClient deprecation warning remains.
+
+The user subsequently requested all UI tabs, including property listing. The test UI now has Properties (all local links plus a configured-property PMS read), Room types, Bookings (local lifecycle plus PMS booking lookup), Guests & folios, Availability, Rates, Refunds, Sync activity, and Connection & mappings. Read forms require explicit submission; opening tabs does not make live PMS requests. No verified server-wide all-properties API was found, so the UI does not represent local links as a complete WISH hotel directory. `/api/workspace/config` exposes non-secret configuration and credential-presence booleans only. After these tab additions, 51 tests passed, Ruff checks passed, and both JavaScript files passed `node --check`; browser visual verification remains uncompleted.
+
+After this handoff was first written, the user supplied:
+
+- Touché POS service root: `https://pms-api.rufescent.com/ToucheAPI`
+- WISH PMS service root: `https://pms-api.rufescent.com/WISHAPI`
+- Property ID: **`RUF01`** (zero, then one).
+
+The test project's `.env` property code was updated to `RUF01`, and the two service roots were recorded in comments. The existing mode and base URL were retained. A WISH service root does not establish the full path for the client's `/WebAPI/api/` JSON operations, and is not the SOAP Pull/Push URL. Confirm the exact deployed operation URLs before changing `PMS_BASE_URL`; do not blindly append `/api/` and claim connectivity. The web tool could not access either root, which does not establish that the service itself is down. No authenticated API test or live write was performed.
+
+Subsequently, the user explicitly requested updating `.env`. `PMS_BASE_URL` was set to the supplied root `https://pms-api.rufescent.com/WISHAPI/` and `PMS_PROPERTY_CODE` remains `RUF01`. Other settings were preserved. This updates configuration only: the existing client appends JSON operation paths to this root, and their compatibility with the deployment is still unverified.
+
+Still needed: verified full JSON operation URL, authentication credentials/mechanism, assigned source ID, SOAP service URLs/credentials/WSDL, and room/rate/package mappings. These supplied URLs do not enable real lifecycle writes by themselves.
+
 ## 1. User's objective and non-negotiable boundary
 
 We want to integrate **Prologic First WISH PMS** with the **Stay / Book a Stay module in Rufescent**. First, build and verify the workflows in an independent Python/FastAPI test project. Actual Rufescent integration comes later.

@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     soap_password: SecretStr = SecretStr("")
     soap_actions: dict[str, str] = Field(default_factory=dict)
     lifecycle_db: Path = Path(__file__).resolve().parents[1] / "data" / "lifecycle.sqlite3"
+    live_contracts_file: Path | None = None
+    json_paths: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_connection(self):
@@ -46,13 +48,6 @@ class Settings(BaseSettings):
             for name in names
         ):
             raise ValueError("Invalid authentication header name")
-        if self.mode == "live" and (
-            url.hostname == "mock-pms"
-            or not self.property_code.strip()
-            or not self.source_id.strip()
-            or not self.client_id.get_secret_value()
-            or not self.auth_code.get_secret_value()
-        ):
-            raise ValueError("Live mode requires a real URL, property/source codes and credentials")
+        # Missing credentials are reported by readiness/operation guards, so the live UI can start.
         self.base_url = self.base_url.rstrip("/") + "/"
         return self

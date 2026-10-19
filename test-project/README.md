@@ -1,5 +1,7 @@
 # WISH PMS API Test Project — FastAPI
 
+**Live mode update:** The project now supports real JSON/SOAP write transports through vendor-verified operation contracts, with separate live and mock ledgers. Missing credentials no longer prevent UI startup. Live booking/status/refund-record operations stay blocked until their real contracts and mappings are configured. See [Real PMS mode](docs/live-mode.md) before enabling writes. Earlier simulation instructions below apply to `PMS_MODE=mock`.
+
 Python 3.12+ test harness adapted to Rufescent's **Book a Stay** workflow: multi-room bookings, packages, member/friends-and-family guests, Dubai dates, frozen totals and reservation IDs. Rufescent is read-only reference material; this project never imports or calls it.
 
 ## Setup and run (PowerShell)
@@ -14,13 +16,17 @@ Open **http://127.0.0.1:8010/** for the test UI, or **http://127.0.0.1:8010/docs
 
 ## Test the booking lifecycle in the UI
 
+The UI has nine tabs: **Properties**, **Room types**, **Bookings**, **Guests & folios**, **Availability**, **Rates**, **Refunds**, **Sync activity**, and **Connection & mappings**. Tabs support arrow-key navigation and URL fragments such as `/#bookings`.
+
+Properties lists all saved local property links and can search by stay name/ID or PMS code. **Load property info** reads the configured WISH property's `PROPERTY_INFO`; it does not enumerate every hotel on the server. Room types, PMS booking lookup, guest information, folios, availability and rates use their existing read adapters when you submit a form. No live PMS requests run just by opening a tab. The connection tab shows credential presence, never credential values. Refund and activity tabs list all local simulator records and link back to the appropriate booking.
+
 1. **Link your property:** give the local stay an identifier and name, then enter the simulated PMS property code/source ID. Click **Link property**. Links become immutable once used by a booking.
 2. **Create a test stay:** select the property, member/friends-and-family scenario, dates, guest and initial status. The demo uses a frozen two-room snapshot; its total does not reprice when dates change. Enter the amount already paid in the simulation and click **Create booking & sync**. Both local and simulated PMS records appear, with separate IDs.
 3. Select a booking and use **Confirm booking → Check in → Check out**, or **Cancel booking** before check-in. Local and PMS statuses and the event history are displayed separately. Repeating the same status is a no-op.
 4. After cancellation, enter a partial/full refund and click **Send test refund**. Cancellation alone does not refund money. Only a successful simulated processor result creates a PMS refund-sync event. Refunds cannot exceed the unrefunded amount paid.
 5. Test **Fail before PMS receives it** or **Timeout after PMS applies it**. Local changes remain saved; **Retry PMS sync** reconciles applied events and processes the per-booking queue in order. It never reissues a payment refund. You can also fail and retry the simulated refund processor independently.
 
-The UI's lifecycle writes are **local simulations**, including confirmation, check-in/out, cancellation and refunds. They never call WISH or a payment processor, even if live credentials are configured. Lifecycle writes are disabled in `PMS_MODE=live`; existing live JSON/SOAP read routes stay separate. WISH write contracts for the complete lifecycle still need vendor verification.
+In mock mode, lifecycle actions are local simulations. In live mode, configured operation contracts dispatch real WISH writes; missing operations remain blocked, without simulated success. Payment refunds themselves are not issued: live refund actions record a refund already completed externally. The installed WISH contracts for the complete lifecycle still need vendor verification.
 
 `data/lifecycle.sqlite3` persists property links, bookings, PMS records, refund references, idempotency keys and event attempt history across restarts. `PMS_LIFECYCLE_DB` can select another local file. This database is independent of Rufescent. The simulator processes events on each action or explicit retry, with no background worker. It does not enforce real room availability, cancellation policy, payment eligibility or live pricing; those remain Rufescent responsibilities.
 
@@ -60,7 +66,7 @@ Restart the server after changing configuration. Use the same Swagger endpoints 
 
 For SOAP reads, configure `PMS_SOAP_PULL_URL`, `PMS_SOAP_USERNAME`, `PMS_SOAP_PASSWORD` and, if required by the installed WSDL, `PMS_SOAP_ACTIONS`. Copy `fixtures/mappings.json` to `fixtures/live-mappings.json`, replace every demo mapping with vendor-confirmed codes, set `synthetic=false`, and set `PMS_MAPPINGS_FILE=fixtures/live-mappings.json`. Synthetic mappings are blocked for live SOAP reads. Credential values must be suitable for HTTP/XML encoding.
 
-Full reads request `UpdatedAvailability=N` and `UpdatedRate=N`; no acknowledgements are sent. Confirm SOAP actions, namespaces, date range boundaries, full/delta behavior and response wrapping against your installation before treating responses as verified. There is no live reservation write endpoint, and simulation is blocked in live mode.
+Full reads request `UpdatedAvailability=N` and `UpdatedRate=N`; no acknowledgements are sent. Confirm SOAP actions, namespaces, date range boundaries, full/delta behavior and response wrapping against your installation before treating responses as verified. Live writes require `PMS_LIVE_CONTRACTS_FILE`; see [Real PMS mode](docs/live-mode.md). Simulation fixtures and mock-ledger records are excluded from live mode.
 
 ## Verify
 

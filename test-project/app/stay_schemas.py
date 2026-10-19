@@ -17,6 +17,24 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
+class BookingSearch(StrictModel):
+    search_for: Literal["R", "I", "C"] = "R"
+    date_from: date | None = None
+    date_to: date | None = None
+    confirmation_number: str = Field(default="", max_length=100)
+    guest_name: str = Field(default="", max_length=200)
+
+    @model_validator(mode="after")
+    def dates(self):
+        if bool(self.date_from) != bool(self.date_to):
+            raise ValueError("Supply both date_from and date_to, or neither")
+        if self.date_from and (
+            self.date_to < self.date_from or (self.date_to - self.date_from).days > 366
+        ):
+            raise ValueError("Search date range must be ordered and no longer than 366 days")
+        return self
+
+
 class StayQuery(StrictModel):
     check_in_date: AwareDatetime
     check_out_date: AwareDatetime

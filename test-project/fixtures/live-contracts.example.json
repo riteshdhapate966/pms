@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "instructions": "Not active vendor contracts. Obtain exact URLs, complete request bodies and success/ID selectors from Prologic First. Each operation remains blocked until its own verified flag is true. Copy to live-contracts.json and configure PMS_LIVE_CONTRACTS_FILE.",
+  "operations": {
+    "create": {
+      "verified": false,
+      "protocol": "soap",
+      "url": "https://vendor-confirmed-host/vendor-confirmed-push-service",
+      "action": "VENDOR_CONFIRMED_ACTION_URI",
+      "request": "REPLACE_WITH_COMPLETE_VENDOR_ACCEPTED_XML_BODY",
+      "success_path": ".//{http://www.opentravel.org/OTA/2003/05}Success",
+      "success_value": true,
+      "reservation_id_path": ".//{http://www.opentravel.org/OTA/2003/05}HotelReservationID[@ResID_Type='10']/@ResID_Value"
+    },
+    "confirmed": {
+      "verified": false, "protocol": "json", "url": "https://vendor-confirmed-host/vendor-confirmed-confirm-operation",
+      "request": {"REPLACE_WITH_VENDOR_REQUEST": "{{vendor_fields.request}}"}, "success_path": "status_code", "success_value": "200"
+    },
+    "checked_in": {
+      "verified": false, "protocol": "json", "url": "https://vendor-confirmed-host/vendor-confirmed-checkin-operation",
+      "request": {"REPLACE_WITH_VENDOR_REQUEST": "{{vendor_fields.request}}"}, "success_path": "status_code", "success_value": "200"
+    },
+    "checked_out": {
+      "verified": false, "protocol": "json", "url": "https://vendor-confirmed-host/vendor-confirmed-checkout-operation",
+      "request": {"REPLACE_WITH_VENDOR_REQUEST": "{{vendor_fields.request}}"}, "success_path": "status_code", "success_value": "200"
+    },
+    "cancelled": {
+      "verified": false, "protocol": "json", "url": "https://vendor-confirmed-host/vendor-confirmed-cancel-operation",
+      "request": {"REPLACE_WITH_VENDOR_REQUEST": "{{vendor_fields.request}}"}, "success_path": "status_code", "success_value": "200"
+    },
+    "refund_record": {
+      "verified": false, "protocol": "json", "url": "https://vendor-confirmed-host/vendor-confirmed-refund-record-operation",
+      "request": {"REPLACE_WITH_VENDOR_REQUEST": "{{vendor_fields.request}}"}, "success_path": "status_code", "success_value": "200"
+    }
+  }
+}

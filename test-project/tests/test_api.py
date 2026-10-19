@@ -3,7 +3,6 @@ import json
 import httpx
 import pytest
 from fastapi.testclient import TestClient
-from pydantic import ValidationError
 
 from app.config import Settings
 from app.main import create_app
@@ -95,6 +94,12 @@ def test_network_failures(error, status):
         assert "private" not in result.text
 
 
-def test_live_configuration_required():
-    with pytest.raises(ValidationError):
-        Settings(_env_file=None, mode="live")
+def test_live_missing_credentials_allow_ui_but_block_requests(tmp_path):
+    settings = Settings(_env_file=None, mode="live", lifecycle_db=tmp_path / "live.sqlite3")
+    calls = []
+    with TestClient(
+        create_app(settings, transport=httpx.MockTransport(lambda request: calls.append(request)))
+    ) as client:
+        assert client.get("/").status_code == 200
+        assert client.get("/api/masters/PROPERTY_INFO").status_code == 503
+        assert calls == []

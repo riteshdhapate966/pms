@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stay sync lab · Rufescent</title>
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/tabs.css">
   <script src="/static/app.js" defer></script>
+  <script src="/static/tabs.js" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -18,13 +20,40 @@
       <div><h1>Every stay.<br>Always in sync.</h1><p>Connect a property. Create a stay. Follow every booking change<br class="desktop"> and refund from Rufescent to the PMS.</p></div>
       <div class="intro-note"><span class="small-dot"></span><div><strong>A space to test the whole journey.</strong><p>Bookings, PMS updates and refunds are simulated locally. No real hotel records change and no money moves.</p></div></div>
     </section>
-    <div id="live-warning" class="notice hidden">Lifecycle actions require mock mode. Set PMS_MODE=mock and restart. Live API reads remain available in API docs.</div>
+    <div id="live-warning" class="notice hidden">Live read mode. Use the tabs below to test PMS reads. Booking changes and refunds remain simulation-only and require PMS_MODE=mock.</div>
     <section class="metrics" aria-label="Integration overview">
       <div><span>Linked properties</span><strong id="metric-properties">—</strong></div>
       <div><span>Test bookings</span><strong id="metric-bookings">—</strong></div>
       <div><span>PMS synced</span><strong id="metric-synced">—</strong></div>
       <div><span>Needs attention</span><strong id="metric-attention">—</strong></div>
     </section>
+    <div class="workspace-tabs" role="tablist" aria-label="PMS workspace">
+      <button type="button" id="tab-properties" role="tab" aria-controls="view-properties" aria-selected="true" data-tab="properties">Properties</button>
+      <button type="button" id="tab-rooms" role="tab" aria-controls="view-rooms" aria-selected="false" tabindex="-1" data-tab="rooms">Room types</button>
+      <button type="button" id="tab-bookings" role="tab" aria-controls="view-bookings" aria-selected="false" tabindex="-1" data-tab="bookings">Bookings</button>
+      <button type="button" id="tab-guests" role="tab" aria-controls="view-guests" aria-selected="false" tabindex="-1" data-tab="guests">Guests &amp; folios</button>
+      <button type="button" id="tab-availability" role="tab" aria-controls="view-availability" aria-selected="false" tabindex="-1" data-tab="availability">Availability</button>
+      <button type="button" id="tab-rates" role="tab" aria-controls="view-rates" aria-selected="false" tabindex="-1" data-tab="rates">Rates</button>
+      <button type="button" id="tab-refunds" role="tab" aria-controls="view-refunds" aria-selected="false" tabindex="-1" data-tab="refunds">Refunds</button>
+      <button type="button" id="tab-activity" role="tab" aria-controls="view-activity" aria-selected="false" tabindex="-1" data-tab="activity">Sync activity</button>
+      <button type="button" id="tab-settings" role="tab" aria-controls="view-settings" aria-selected="false" tabindex="-1" data-tab="settings">Connection &amp; mappings</button>
+    </div>
+    <section id="view-properties" role="tabpanel" aria-labelledby="tab-properties" class="tab-view">
+      <div class="property-layout"><div>
+        <section class="panel"><div class="panel-title"><div><div class="eyebrow">PROPERTY DIRECTORY</div><h2>All linked properties</h2></div><button type="button" class="secondary" data-go="bookings">Create a booking →</button></div>
+          <p class="hint">All stay-to-PMS links saved in this test workspace. These are local links, not a discovery of every hotel on the WISH server.</p>
+          <label>Search properties<input type="search" id="property-search" placeholder="Stay name, identifier or PMS code"></label><div id="property-directory"></div>
+        </section>
+        <section class="panel read-panel"><div class="panel-title"><div><div class="eyebrow">PMS READ</div><h2>Configured PMS property</h2></div><button type="button" class="secondary" id="load-property">Load property info</button></div>
+          <p class="hint">Reads PROPERTY_INFO for the configured property. The supplied specification does not establish an endpoint that lists every accessible hotel.</p><div id="property-result" class="read-result"><p class="hint">No PMS request made yet.</p></div>
+        </section>
+      </div><div id="property-setup"></div></div>
+    </section>
+    <section id="view-rooms" role="tabpanel" aria-labelledby="tab-rooms" class="tab-view hidden"><div class="panel read-panel"><div class="panel-title"><div><div class="eyebrow">PMS CATALOG</div><h2>Room types</h2></div><button type="button" class="secondary" id="load-rooms">Load room types</button></div><p class="hint">Reads ROOM_TYPE from the configured property. This does not list physical rooms or room operational status.</p><div id="rooms-result" class="read-result"><p class="hint">Load the PMS room-type master to inspect its response.</p></div></div></section>
+    <section id="view-bookings" role="tabpanel" aria-labelledby="tab-bookings" class="tab-view hidden">
+    <div class="panel read-panel"><h2>Search PMS bookings</h2><p class="hint">Queries WISH directly. Reserved, in-house and checked-out records are separate searches.</p><form id="pms-search-form" class="query-form"><label>Records<select name="search_for"><option value="R">Reserved</option><option value="I">In house</option><option value="C">Checked out</option></select></label><label>From<input type="date" name="date_from"></label><label>To<input type="date" name="date_to"></label><label>Confirmation number<input name="confirmation_number" maxlength="100"></label><label>Guest name<input name="guest_name" maxlength="200"></label><button type="submit" class="secondary">Search WISH</button></form><div id="pms-search-result" class="read-result"></div></div>
+    <div class="panel hidden" id="live-create-panel"><h2>Create a real PMS reservation</h2><p class="hint">Paste an actual stay snapshot and vendor-specific fields. This form sends a real write only when the vendor-verified create contract and real mappings are configured. No demo snapshot is submitted.</p><form id="live-booking-form"><label>Stay snapshot and vendor fields (JSON)<textarea id="live-booking-json" rows="14" required spellcheck="false" placeholder='{"stay_id":"your-linked-stay","booking":{},"paid_amount":"0.00","vendor_fields":{}}'></textarea></label><button type="submit" id="live-create-button" class="primary">Create real PMS reservation</button></form><div id="live-create-readiness" class="hint"></div></div>
+    <div class="panel read-panel"><h2>Find a PMS booking</h2><form id="pms-booking-form" class="lookup-form"><label>PMS booking ID<input name="booking_id" required maxlength="100" placeholder="Mock: TEST-PMS-BOOKING-001"></label><button type="submit" class="secondary">Look up booking</button></form><div id="pms-booking-result" class="read-result"></div></div>
     <div class="workspace">
       <aside class="setup">
         <section class="panel">
@@ -60,6 +89,13 @@
         <section id="booking-detail" class="panel detail-panel"><div class="empty"><div class="empty-symbol">↔</div><h2>Your booking journey starts here</h2><p>Link a property and create a booking.<br>Then test each status change, PMS retry and refund.</p></div></section>
       </div>
     </div>
+    </section>
+    <section id="view-guests" role="tabpanel" aria-labelledby="tab-guests" class="tab-view hidden"><div class="panel read-panel"><h2>Guest details &amp; folios</h2><p class="hint">Use a WISH guest ID, not a Rufescent member UUID. Mock guest: TEST-GUEST-001.</p><form id="guest-read-form" class="lookup-form"><label>PMS guest ID<input name="guest_id" required maxlength="100" placeholder="TEST-GUEST-001"></label><label>Information<select name="operation"><option value="booking-summary">Booking summary</option><option value="personal-details">Personal details</option><option value="folio">Folio</option></select></label><button type="submit" class="secondary">Load guest data</button></form><div id="guest-result" class="read-result"></div></div></section>
+    <section id="view-availability" role="tabpanel" aria-labelledby="tab-availability" class="tab-view hidden"><div class="panel read-panel"><h2>Availability</h2><p class="hint">Read room-type availability and restrictions through HTNG. Dates use Dubai time. No records are acknowledged or deleted.</p><div id="availability-query"></div><div id="availability-result" class="read-result"></div></div></section>
+    <section id="view-rates" role="tabpanel" aria-labelledby="tab-rates" class="tab-view hidden"><div class="panel read-panel"><h2>Rate plans</h2><p class="hint">Read mapped HTNG rate plans. Results are diagnostic data, not a binding Rufescent quote.</p><div id="rates-query"></div><div id="rates-result" class="read-result"></div></div></section>
+    <section id="view-refunds" role="tabpanel" aria-labelledby="tab-refunds" class="tab-view hidden"><div class="panel"><h2>All test refunds</h2><p class="hint">Review simulated payment completion separately from PMS synchronization. Open a cancelled booking to issue or retry a test refund.</p><div id="refund-directory"></div></div></section>
+    <section id="view-activity" role="tabpanel" aria-labelledby="tab-activity" class="tab-view hidden"><div class="panel"><div class="panel-title"><div><h2>All sync activity</h2><p class="hint">Persistent local simulator events and attempt history.</p></div><label>Filter status<select id="activity-filter"><option value="all">All events</option><option value="failed">Failed</option><option value="pending">Pending</option><option value="synced">Synced</option></select></label></div><div id="activity-directory"></div></div></section>
+    <section id="view-settings" role="tabpanel" aria-labelledby="tab-settings" class="tab-view hidden"><div class="panel"><h2>Connection</h2><p class="hint">Shows configured values and credential presence only. A configured value does not establish connectivity. Edit credentials in the local .env file; secrets are never shown here.</p><div id="connection-summary"></div></div><div class="panel"><h2>Room &amp; rate mappings</h2><p class="hint">Audience and package selections must resolve to an explicit WISH room type and rate plan.</p><div id="mapping-directory"></div></div></section>
     <footer>Rufescent stays · WISH PMS test workspace<span>Local data persists between restarts. <a href="/docs">Explore the API ↗</a></span></footer>
   </main>
   <div id="toast" role="status" aria-live="polite" class="toast hidden"></div>
@@ -72,7 +108,8 @@
       <div><span class="eyebrow">SIMULATED PMS</span><strong data-field="pms_status"></strong><small data-field="pms_id"></small></div>
     </div>
     <div class="notice hidden" data-field="sync_error"></div>
-    <div class="actions"><div><label>Failure for the next PMS update<select id="action-failure"><option value="none">None — sync normally</option><option value="before_apply">Fail before PMS receives it</option><option value="after_apply">Timeout after PMS applies it</option></select></label></div><div data-field="status_actions" class="status-buttons"></div></div>
+    <div class="actions"><div id="failure-control"><label>Failure for the next PMS update<select id="action-failure"><option value="none">None — sync normally</option><option value="before_apply">Fail before PMS receives it</option><option value="after_apply">Timeout after PMS applies it</option></select></label></div><div data-field="status_actions" class="status-buttons"></div></div>
+    <label id="vendor-fields-control" class="hidden">Vendor fields for status/refund operations (JSON)<textarea id="action-vendor-fields" rows="4" spellcheck="false">{}</textarea></label>
     <div class="money-grid"><div><span>Booking total</span><strong data-field="total"></strong></div><div><span>Simulated payment</span><strong data-field="paid"></strong></div><div><span>Refund completed</span><strong data-field="refunded"></strong></div><div><span>Refund on PMS</span><strong data-field="pms_refunded"></strong></div></div>
     <div data-field="refund_area"></div>
     <div class="timeline-heading"><h3>Sync activity</h3><span>Oldest first · each event is saved</span></div>

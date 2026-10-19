@@ -9,6 +9,7 @@ from app.config import Settings
 from app.htng import OTA, SOAP, xml_response
 from app.main import create_app
 from app.pms import PmsError
+from app.stay import scenarios as load_scenarios
 
 
 @pytest.fixture
@@ -157,11 +158,11 @@ def test_live_mode_blocks_simulation_and_synthetic_mapping():
         auth_code="secret",
     )
     with TestClient(create_app(settings)) as client:
-        trial = scenario(client)
+        trial = load_scenarios()["member_multi_room"]
         assert client.post("/api/rufescent/reservations/simulate", json=trial).status_code == 409
         assert (
             client.post(
-                "/api/rufescent/availability", json=scenario(client, "availability_request")
+                "/api/rufescent/availability", json=load_scenarios()["availability_request"]
             ).status_code
             == 409
         )

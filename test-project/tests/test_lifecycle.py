@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.lifecycle import CreateBooking
 from app.main import create_app
+from app.stay import scenarios as load_scenarios
 
 BASE = "/api/lifecycle"
 
@@ -237,7 +238,16 @@ def test_live_mode_blocks_lifecycle_writes(settings):
     settings = settings.model_copy(update={"mode": "live"})
     with TestClient(create_app(settings)) as client:
         assert client.get(f"{BASE}/state").json()["writes_enabled"] is False
-        assert client.post(f"{BASE}/bookings", json=payload(client)).status_code == 409
+        assert (
+            client.post(
+                f"{BASE}/bookings",
+                json={
+                    "stay_id": "test",
+                    "booking": load_scenarios()["member_multi_room"]["booking"],
+                },
+            ).status_code
+            == 503
+        )
 
 
 def test_creation_concurrency_has_one_external_reference(client):

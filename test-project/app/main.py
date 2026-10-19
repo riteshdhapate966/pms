@@ -11,12 +11,15 @@ from app.config import Settings
 from app.htng import HtngClient
 from app.lifecycle import Lifecycle
 from app.lifecycle import router as lifecycle_router
+from app.live import LiveGateway
 from app.pms import PmsClient, PmsError, mock_handler
 from app.stay import StayHarness
 from app.stay import router as stay_router
 
 
-def create_app(settings: Settings | None = None, transport=None, soap_transport=None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, transport=None, soap_transport=None, live_transport=None
+) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         config = settings or Settings()
@@ -38,10 +41,11 @@ def create_app(settings: Settings | None = None, transport=None, soap_transport=
             trust_env=False,
         ) as http:
             app.state.config = config
-            app.state.pms = PmsClient(http, config.property_code, config.source_id)
+            app.state.pms = PmsClient(http, config.property_code, config.source_id, config)
             app.state.stay = StayHarness(config)
             app.state.htng = HtngClient(config, soap_transport)
-            app.state.lifecycle = Lifecycle(config, app.state.stay)
+            app.state.live_gateway = LiveGateway(config, app.state.stay.mappings, live_transport)
+            app.state.lifecycle = Lifecycle(config, app.state.stay, app.state.live_gateway)
             yield
 
     app = FastAPI(
@@ -63,6 +67,37 @@ def create_app(settings: Settings | None = None, transport=None, soap_transport=
     async def health(request: Request):
         """Application health only; does not check connectivity to WISH."""
         return {"status": "ok", "mode": request.app.state.config.mode}
+
+    @app.get("/api/workspace/config", tags=["Workspace"])
+    async def workspace_config(request: Request):
+        """Non-secret configuration and credential presence only, not a connectivity check."""
+        config = request.app.state.config
+        return {
+            "mode": config.mode,
+            "property_code": config.property_code,
+            "source_id": config.source_id,
+            "base_url": config.base_url,
+            "soap_pull_url": config.soap_pull_url,
+            "json_credentials_present": bool(
+                config.client_id.get_secret_value() and config.auth_code.get_secret_value()
+            ),
+            "soap_credentials_present": bool(
+                config.soap_username.get_secret_value() and config.soap_password.get_secret_value()
+            ),
+            "synthetic_mappings": request.app.state.stay.mappings.get("synthetic") is not False,
+            "live_writes_supported": any(
+                cap["ready"] for cap in request.app.state.live_gateway.capabilities().values()
+            ),
+            "capabilities": request.app.state.live_gateway.capabilities(),
+            "json_reads_ready": bool(
+                config.client_id.get_secret_value()
+                and config.auth_code.get_secret_value()
+                and config.property_code.strip()
+                and config.source_id.strip()
+                and "mock-pms" not in config.base_url
+            ),
+            "notice": "Capabilities describe configuration readiness, not verified connectivity or API compatibility.",
+        }
 
     @app.get("/api/masters/{kind}", tags=["Masters"])
     async def masters(request: Request, kind: Literal["PROPERTY_INFO", "ROOM_TYPE"]):
